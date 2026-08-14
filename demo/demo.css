@@ -43,9 +43,11 @@ button, input, select { font: inherit; }
 .demo h1 em { color: #aeb2bc; font-weight: 400; }
 .demo__copy { padding-bottom: 6px; }
 .demo__copy p { max-width: 410px; margin: 0 0 24px; color: rgb(255 255 255 / 55%); font-size: 14px; line-height: 1.65; }
-.demo__buttons { display: flex; gap: 8px; }
+.demo__buttons { display: flex; flex-wrap: wrap; gap: 8px; }
 .demo__buttons button { padding: 10px 14px; color: #161719; font-size: 12px; font-weight: 600; cursor: pointer; background: #e9c46a; border: 0; border-radius: 9px; }
 .demo__buttons .demo__button--quiet { color: #ecece9; background: rgb(255 255 255 / 8%); }
+.demo__repro-state { display: block; margin-top: 10px; color: rgb(255 255 255 / 42%); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.demo__png-state { display: block; margin-top: 4px; color: #e9c46a; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
 
 .demo__viewer { position: relative; width: min(1320px, calc(100% - 32px)); min-width: min(560px, calc(100% - 32px)); max-width: calc(100% - 32px); height: min(76vh, 820px); min-height: 480px; max-height: 92vh; margin: 0 auto; overflow: hidden; resize: both; border: 1px solid rgb(255 255 255 / 8%); border-radius: 20px; box-shadow: 0 40px 90px rgb(0 0 0 / 30%); }
 .demo__viewer .flipdocs { height: 100%; }
@@ -103,7 +105,7 @@ button, input, select { font: inherit; }
   .demo__intro > div:first-child { display: none; }
   .demo__copy { padding: 0; }
   .demo__copy p { display: none; }
-  .demo__buttons { gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .demo__buttons { flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: none; }
   .demo__buttons::-webkit-scrollbar { display: none; }
   .demo__buttons button { flex: 1 0 auto; min-height: 42px; padding: 9px 10px; font-size: 10px; }
   .demo__viewer {

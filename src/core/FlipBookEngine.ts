@@ -25,6 +25,7 @@ import type {
   FlipBookRenderSettings,
   FlipBookRiffleSettings,
   FlipBookSoundSettings,
+  FlipBookTurnPose,
   FlipBookZoomSettings,
   FlipDirection,
   PageLink,
@@ -34,11 +35,13 @@ import type { PageSource } from "../source/PageSource";
 import { PageCurlGeometry, type PageCurlInteraction } from "./PageCurlGeometry";
 import { PageTextureCache } from "./PageTextureCache";
 import { attachedProgressForPointer } from "./pointerAttachment";
+import { resolvePointerTurnPress } from "./pointerSequence";
 import { createRestingPageGeometry } from "./restingPageGeometry";
 import {
   addFoldShading,
   createCurlMaterial,
   lightVector,
+  turnShadingEnvelope,
   type CurlMaterial,
   type FoldShadingUniforms,
 } from "./pageMaterial";
@@ -179,7 +182,6 @@ export class FlipBookEngine {
   private sourceGeneration = 0;
   private animationGeneration = 0;
   private resizeTextureTimer = 0;
-  private lastRasterHeight = 0;
   private renderCount = 0;
   private interaction: PageCurlInteraction = { grabX: 1, grabY: 0.78, targetY: 0.52 };
   private curl: FlipBookCurlSettings;
@@ -398,7 +400,6 @@ export class FlipBookEngine {
     this.riffling = false;
     this.pendingLink = undefined;
     this.cache = new PageTextureCache(source, this.renderer, Math.max(4, this.options.cacheSize));
-    this.lastRasterHeight = 0;
     this.pageHeight = 2;
     this.pageWidth = this.pageHeight * source.pageAspect;
     const requestedPage = Math.max(
@@ -550,21 +551,67 @@ export class FlipBookEngine {
     }
   }
 
-  setFlipProgress(progress: number, direction: FlipDirection = "next"): void {
+  setFlipProgress(
+    progress: number,
+    direction: FlipDirection = "next",
+    pose?: Partial<FlipBookTurnPose>,
+  ): void {
     if (!this.source || !this.canFlip(direction)) return;
     this.claimHoverPreview(direction);
+    if (this.flip && this.flip.direction !== direction) this.resetFlip();
     this.cancelAnimation();
     if (!this.flip || this.flip.direction !== direction) {
       this.interaction = { grabX: 1, grabY: 0.78, targetY: 0.5 };
       this.prepareFlip(direction);
     }
+    if (!this.flip || this.flip.direction !== direction) return;
+    if (pose) {
+      this.interaction = {
+        grabX: clamp01(pose.grabX ?? this.interaction.grabX),
+        grabY: clamp01(pose.grabY ?? this.interaction.grabY),
+        targetY: clamp01(pose.targetY ?? this.interaction.targetY),
+        pointerAttached: pose.pointerAttached ?? this.interaction.pointerAttached,
+      };
+    }
     this.setProgress(clamp01(progress));
+    this.canvas.dataset.simulatedCase = `${direction}-held-turn`;
+  }
+
+  previewCorner(
+    corner: "top" | "bottom" = "top",
+    direction: FlipDirection = "next",
+  ): void {
+    if (this.flip && !this.hoverPreview) this.resetFlip();
+    this.showCornerPreview(direction, corner === "top" ? 1 : 0);
+    if (this.hoverPreview) {
+      this.canvas.dataset.simulatedCase = `${direction}-${corner}-hover`;
+    }
+  }
+
+  resetFlip(): void {
+    if (this.hoverPreview) {
+      this.abandonHoverPreview();
+      delete this.canvas.dataset.simulatedCase;
+      return;
+    }
+    const flip = this.flip;
+    if (!flip) return;
+    this.cancelAnimation();
+    this.finishAnimation(flip, flip.direction === "next" ? 0 : 1);
+    delete this.canvas.dataset.simulatedCase;
   }
 
   completeFlip(): void {
     if (!this.flip) return;
     this.claimHoverPreview(this.flip.direction);
     this.animateTo(this.flip.direction === "next" ? 1 : 0);
+  }
+
+  capturePng(): string {
+    // Keep preserveDrawingBuffer disabled for normal performance. Rendering
+    // immediately before the synchronous read captures the current frame.
+    this.render();
+    return this.canvas.toDataURL("image/png");
   }
 
   setCurlSettings(settings: Partial<FlipBookCurlSettings>): void {
@@ -786,8 +833,7 @@ export class FlipBookEngine {
       Math.abs(previousResolution - this.renderSettings.resolutionScale) > 0.001
     ) {
       const generation = ++this.sourceGeneration;
-      this.lastRasterHeight = 0;
-      // Keep the existing GPU maps visible while sharper replacements render.
+        // Keep the existing GPU maps visible while sharper replacements render.
       // Recreating the cache here disposed the sheet being tuned mid-flip and
       // could expose a black page until PDF.js finished the new raster.
       if (this.flip) void this.loadFlipTextures(this.flip, generation);
@@ -840,7 +886,7 @@ export class FlipBookEngine {
   }
 
   private updateShadowOpacity(): void {
-    const envelope = Math.sqrt(Math.max(0, Math.sin(Math.PI * this.progress)));
+    const envelope = turnShadingEnvelope(this.progress);
     this.shadowLight.shadow.intensity = this.renderSettings.shadowOpacity * envelope;
   }
 
@@ -1026,7 +1072,6 @@ export class FlipBookEngine {
     if (!this.cache) return;
     try {
       const target = this.textureHeight();
-      this.lastRasterHeight = Math.max(this.lastRasterHeight, target);
       const apply = async (index: number, install: (texture: Texture) => void) => {
         const texture = await this.cache!.get(index, target);
         if (generation !== this.sourceGeneration || this.flip !== flip) return;
@@ -1039,11 +1084,13 @@ export class FlipBookEngine {
       ];
       if (flip.underLeft !== null) {
         requests.push(apply(flip.underLeft, (texture) => {
+          if (this.hoverPreview) return;
           this.setStaticMap(this.leftMesh, this.leftMaterial, texture, true);
         }));
       }
       if (flip.underRight !== null) {
         requests.push(apply(flip.underRight, (texture) => {
+          if (this.hoverPreview) return;
           this.setStaticMap(this.rightMesh, this.rightMaterial, texture, true);
         }));
       }
@@ -1058,6 +1105,7 @@ export class FlipBookEngine {
 
   private setProgress(value: number): void {
     this.progress = clamp01(value);
+    this.curlMaterial.uniforms.turnAmount.value = turnShadingEnvelope(this.progress);
     this.updateShadowOpacity();
     const previousTurn = this.flip?.direction === "previous";
     this.curlGeometry.update(
@@ -1086,7 +1134,7 @@ export class FlipBookEngine {
     const visible =
       this.renderSettings.shadows && this.curlMesh.visible && Boolean(this.flip) && fold.active;
     const strength = visible
-      ? this.renderSettings.shadowOpacity * 1.35 * Math.pow(Math.sin(Math.PI * rawProgress), 0.5)
+      ? this.renderSettings.shadowOpacity * 1.35 * turnShadingEnvelope(rawProgress)
       : 0;
     const band = Math.max(0.22, fold.radius * 4.5);
     for (const shading of [this.leftFoldShading, this.rightFoldShading]) {
@@ -1260,6 +1308,7 @@ export class FlipBookEngine {
     this.hoverPreview = undefined;
     this.canvas.classList.remove("flipdocs__canvas--corner");
     this.flip = undefined;
+    delete this.canvas.dataset.simulatedCase;
     this.interaction = { grabX: 1, grabY: 0.78, targetY: 0.52 };
     this.curlMesh.visible = false;
     void this.showStablePages(this.sourceGeneration);
@@ -1295,7 +1344,6 @@ export class FlipBookEngine {
 
     try {
       const target = this.textureHeight();
-      this.lastRasterHeight = Math.max(this.lastRasterHeight, target);
       const install = async (
         index: number | null,
         mesh: Mesh<PlaneGeometry, MeshStandardMaterial>,
@@ -1343,20 +1391,60 @@ export class FlipBookEngine {
       const backward = center - offset;
       if (backward >= 0) indices.push(backward);
     }
-    this.cache.prefetch(indices, this.textureHeight());
+    // Speculative neighbors always load at base resolution; only the visible
+    // spread earns the zoom boost, keeping the LRU's memory footprint flat.
+    this.cache.prefetch(indices, this.textureHeight(false));
   }
 
-  private textureHeight(): number {
+  /**
+   * The raster height requested from the source. Zoom multiplies into the
+   * same formula the viewport already flows through, so zoomed-in spreads
+   * re-render at their true on-screen resolution. Speculative preloads pass
+   * `boost: false`: neighbors stay at base size and never pay the zoom tax.
+   */
+  private textureHeight(boost = true): number {
     const target = pageRasterHeight({
       cssHeight: this.host.clientHeight || 720,
       devicePixelRatio: window.devicePixelRatio || 1,
       maxPixelRatio: this.options.maxPixelRatio,
       resolutionScale: this.renderSettings.resolutionScale,
-      zoom: this.zoomLevel,
-      maxTextureHeight: this.options.maxTextureHeight,
+      // Zooming out never shrinks the request; an oversized texture
+      // downscales fine and re-rendering smaller would be pure waste.
+      zoom: boost ? Math.max(1, this.zoomLevel) : 1,
+      maxTextureHeight: Math.min(
+        this.options.maxTextureHeight,
+        this.renderer.capabilities.maxTextureSize,
+      ),
     });
-    this.canvas.dataset.rasterHeight = String(target);
+    if (boost) this.canvas.dataset.rasterHeight = String(target);
     return target;
+  }
+
+  /** Every page index currently mapped onto visible book geometry. */
+  private visibleMappedIndices(): number[] {
+    if (this.flip) {
+      const flip = this.flip;
+      return [
+        flip.front,
+        flip.back,
+        ...(flip.underLeft === null ? [] : [flip.underLeft]),
+        ...(flip.underRight === null ? [] : [flip.underRight]),
+      ];
+    }
+    const pageCount = this.source?.pageCount ?? 0;
+    const left = this.currentPage === 0 ? null : this.currentPage;
+    const right = this.currentPage === 0
+      ? 0
+      : this.currentPage + 1 < pageCount ? this.currentPage + 1 : null;
+    return [...(left === null ? [] : [left]), ...(right === null ? [] : [right])];
+  }
+
+  /** True when any visible page's cached raster is meaningfully below target. */
+  private sharpnessStale(target: number): boolean {
+    if (!this.cache) return false;
+    return this.visibleMappedIndices().some(
+      (index) => (this.cache?.heightOf(index) ?? 0) < target * 0.9,
+    );
   }
 
   private rebuildMeshes(): void {
@@ -1507,18 +1595,24 @@ export class FlipBookEngine {
     this.scheduleSharperTextures();
   }
 
+  /**
+   * Debounced re-rasterization after a zoom or resize settles. Staleness is
+   * judged per visible page against the cache, never against a global
+   * high-water mark: pages turned to after an earlier zoom boost start at
+   * base resolution and must still be eligible for sharpening. A mid-flip
+   * zoom reloads the turning sheet's textures through the same swap path.
+   */
   private scheduleSharperTextures(): void {
-    if (!this.source || this.flip) return;
-    const requestedHeight = this.textureHeight();
-    if (requestedHeight <= this.lastRasterHeight * 1.12) return;
+    if (!this.source) return;
+    if (!this.sharpnessStale(this.textureHeight())) return;
     window.clearTimeout(this.resizeTextureTimer);
     this.resizeTextureTimer = window.setTimeout(() => {
-      if (!this.source || this.flip) return;
-      const refreshedHeight = this.textureHeight();
-      if (refreshedHeight <= this.lastRasterHeight * 1.12) return;
+      if (!this.source || !this.cache) return;
+      if (!this.sharpnessStale(this.textureHeight())) return;
       const generation = ++this.sourceGeneration;
-      void this.showStablePages(generation);
-    }, 180);
+      if (this.flip) void this.loadFlipTextures(this.flip, generation);
+      else void this.showStablePages(generation);
+    }, 200);
   }
 
   private render(): void {
@@ -1678,6 +1772,11 @@ export class FlipBookEngine {
     this.prepareFlip(direction);
     if (!this.flip || this.flip.direction !== direction) return;
     this.hoverPreview = preview;
+    // Hover is only a promise to turn, not a committed turn. Keep the current
+    // spread beneath the lifted corner so the following page cannot flash at
+    // the spine or through a sub-pixel seam before pointer-down.
+    this.setStaticMap(this.leftMesh, this.leftMaterial, preview.leftMap, preview.leftVisible);
+    this.setStaticMap(this.rightMesh, this.rightMaterial, preview.rightMap, preview.rightVisible);
     this.canvas.classList.add("flipdocs__canvas--corner");
     this.setProgress(direction === "next" ? this.corner.lift : 1 - this.corner.lift);
   }
@@ -1690,6 +1789,12 @@ export class FlipBookEngine {
     }
     this.hoverPreview = undefined;
     this.canvas.classList.remove("flipdocs__canvas--corner");
+    if (this.flip) {
+      // Pointer-down commits the preview. Install the real page beneath the
+      // moving sheet now; cached surfaces make this synchronous in practice.
+      this.primeFlipTextures(this.flip);
+      void this.loadFlipTextures(this.flip, this.sourceGeneration);
+    }
   }
 
   private abandonHoverPreview(): void {
@@ -2004,8 +2109,17 @@ export class FlipBookEngine {
       this.currentPage === 0 || onForwardSide ? "next" : "previous";
     if (!this.canFlip(direction)) return;
     const continuedPreview = this.hoverPreview?.direction === direction;
+    const turnPress = resolvePointerTurnPress(this.flip?.direction, direction);
     if (this.hoverPreview) this.claimHoverPreview(direction);
-    if (this.flip && !continuedPreview) return;
+    if (turnPress === "reject") return;
+    if (turnPress === "claim" && !continuedPreview) {
+      // Laptop trackpads implement tap-then-hold dragging as one click followed
+      // by a second pointer-down. That first click may already be animating the
+      // sheet; let the second press take it over instead of showing the next
+      // page while the user's drag is ignored.
+      this.cancelAnimation();
+      this.canvas.dataset.lastGesture = "claimed-turn-drag";
+    }
 
     const pointerY = clamp01(1 - (event.clientY - layout.pageTop) / layout.pagePixelHeight);
     // The sheet always folds from its loose edge. Anchoring the curl at an

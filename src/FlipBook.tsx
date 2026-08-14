@@ -191,8 +191,13 @@ export const FlipBook = forwardRef<FlipBookHandle, FlipBookProps>(function FlipB
     next: () => engineRef.current?.next(),
     previous: () => engineRef.current?.previous(),
     goToPage: (page) => engineRef.current?.goToPage(page),
-    setFlipProgress: (progress, direction) => engineRef.current?.setFlipProgress(progress, direction),
+    setFlipProgress: (progress, direction, pose) => (
+      engineRef.current?.setFlipProgress(progress, direction, pose)
+    ),
+    previewCorner: (corner, direction) => engineRef.current?.previewCorner(corner, direction),
+    resetFlip: () => engineRef.current?.resetFlip(),
     completeFlip: () => engineRef.current?.completeFlip(),
+    capturePng: () => engineRef.current?.capturePng() ?? "",
     zoomIn: () => engineRef.current?.zoomIn(),
     zoomOut: () => engineRef.current?.zoomOut(),
     setZoom: (value) => engineRef.current?.setZoom(value),

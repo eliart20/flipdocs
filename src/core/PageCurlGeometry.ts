@@ -10,6 +10,11 @@ export type PageCurlPhysics = Pick<
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 
+/** Pin the exact spine while letting the sheet leave it without a rigid strip. */
+export function bindingBoundaryCorrection(normalizedDistance: number): number {
+  return Math.pow(1 - clamp01(normalizedDistance), 1.7);
+}
+
 export interface PageCurlInteraction {
   /** Horizontal grab point, where 0 is the spine and 1 is the loose edge. */
   grabX: number;
@@ -260,8 +265,11 @@ export class PageCurlGeometry extends BufferGeometry {
         // unconstrained spine displacement over the stiffness zone, leaving
         // the curl itself intact and approximately length preserving.
         const bindingT = clamp01(u / effectiveBinding);
-        const smoothBinding = bindingT * bindingT * (3 - 2 * bindingT);
-        const boundaryCorrection = 1 - smoothBinding;
+        // A conventional smoothstep stays close to one for too long and makes
+        // diagonal drags expose a broad, ruler-straight strip at the binding.
+        // This hinge profile still pins u=0 exactly but releases neighboring
+        // material sooner so the curl remains continuous into the spine.
+        const boundaryCorrection = bindingBoundaryCorrection(bindingT);
         const attachedX = xPosition - spineMappedX * boundaryCorrection;
         this.positions[offset] = mirrorX ? -attachedX : attachedX;
         this.positions[offset + 1] =

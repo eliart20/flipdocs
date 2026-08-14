@@ -183,6 +183,14 @@ The upper and lower loose corners use the same constrained curl as a full drag. 
 
 The built-in toolbar, mouse wheel/trackpad, `+`, `-`, and `0` keys control zoom. Zooming the camera does not stretch a permanently low-resolution PDF texture: Flipdocs requests a sharper visible-page raster after zoom settles, up to `maxTextureHeight`.
 
+Zoom sharpening details:
+
+- The target raster is `on-screen page height × devicePixelRatio (capped by maxPixelRatio) × zoom`, clamped to `maxTextureHeight` and the device's WebGL texture ceiling. Zoom is an input to the same formula viewport size flows through.
+- Re-rasterization is debounced (~200 ms after the zoom settles), covers exactly the visible spread — including a turning sheet mid-flip — and swaps in without a flash: the previous texture stays up until the sharper one is ready.
+- Staleness is judged per page against the cache, so pages you turn to after zooming still sharpen on the next zoom. Zooming back out never forces a re-render; an oversized texture simply downscales.
+- Speculative preloads always load at base (unzoomed) resolution and stay evictable, so deep zoom does not multiply the memory footprint of the LRU.
+- PDF pages re-render through the PDF.js worker, so vector text becomes sharp at any zoom within the caps. Image pages re-decode at the higher target but can never exceed the source bitmap's own resolution — image-mode sharpness is bounded by input pixels.
+
 ```tsx
 const book = useRef<FlipBookHandle>(null);
 

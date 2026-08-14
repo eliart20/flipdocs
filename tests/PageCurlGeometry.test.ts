@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { PageCurlGeometry } from "../src/core/PageCurlGeometry";
+import {
+  bindingBoundaryCorrection,
+  PageCurlGeometry,
+} from "../src/core/PageCurlGeometry";
 
 function position(geometry: PageCurlGeometry, index: number) {
   const attribute = geometry.getAttribute("position");
@@ -38,6 +41,13 @@ function maximumEdgeStretch(
 }
 
 describe("PageCurlGeometry", () => {
+  it("pins only a hinge instead of preserving a broad rigid spine strip", () => {
+    expect(bindingBoundaryCorrection(0)).toBe(1);
+    expect(bindingBoundaryCorrection(0.1)).toBeLessThan(0.85);
+    expect(bindingBoundaryCorrection(0.3)).toBeLessThan(0.55);
+    expect(bindingBoundaryCorrection(1)).toBe(0);
+  });
+
   it("lies flat on the right at the start", () => {
     const geometry = new PageCurlGeometry(8, 2);
     geometry.update(2, 3, 0);

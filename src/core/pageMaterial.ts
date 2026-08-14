@@ -77,7 +77,16 @@ export interface CurlMaterial extends ShaderMaterial {
     foldContrast: { value: number };
     lightDirection: { value: Vector3 };
     sheen: { value: number };
+    turnAmount: { value: number };
   };
+}
+
+/** Smooth, symmetric lighting strength with exact zero at both flat endpoints. */
+export function turnShadingEnvelope(rawProgress: number): number {
+  const progress = Math.max(0, Math.min(1, rawProgress));
+  if (progress === 0 || progress === 1) return 0;
+  const bend = Math.sin(Math.PI * progress);
+  return bend * bend;
 }
 
 export function lightVector(settings: FlipBookRenderSettings): Vector3 {
@@ -116,6 +125,7 @@ export function createCurlMaterial(
       foldContrast: { value: settings.foldContrast },
       lightDirection: { value: lightVector(settings) },
       sheen: { value: settings.sheen },
+      turnAmount: { value: 0 },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -135,6 +145,7 @@ export function createCurlMaterial(
       uniform float foldContrast;
       uniform vec3 lightDirection;
       uniform float sheen;
+      uniform float turnAmount;
       varying vec2 vUv;
       varying vec3 vNormal;
       void main() {
@@ -150,8 +161,9 @@ export function createCurlMaterial(
           (ambientLight + directionalLight * paperFacing) /
           max(0.01, ambientLight + directionalLight * flatFacing);
         float foldAmount = pow(1.0 - abs(normal.z), 1.35);
-        float foldShade = 1.0 - foldContrast * foldAmount;
-        float edgeShade = 0.94 + 0.06 * smoothstep(0.0, 0.08, min(vUv.x, 1.0 - vUv.x));
+        float foldShade = 1.0 - foldContrast * foldAmount * turnAmount;
+        float edgeFalloff = 1.0 - smoothstep(0.0, 0.08, min(vUv.x, 1.0 - vUv.x));
+        float edgeShade = 1.0 - 0.06 * edgeFalloff * turnAmount;
         // Print may shade slightly darker while bending but never brighter
         // than its flat self beyond a whisper; paper is not a mirror.
         vec3 lit = ink.rgb * paperColor * min(diffuse, 1.03) * foldShade * edgeShade;
@@ -160,7 +172,7 @@ export function createCurlMaterial(
         // Suppress it on flat regions to keep resting print unchanged.
         vec3 half_ = normalize(key + vec3(0.0, 0.0, 1.0));
         float band = pow(max(0.0, abs(dot(normal, half_))), 48.0);
-        float bend = smoothstep(0.03, 0.3, 1.0 - abs(normal.z));
+        float bend = smoothstep(0.03, 0.3, 1.0 - abs(normal.z)) * turnAmount;
         lit += sheen * 0.28 * band * bend;
         gl_FragColor = vec4(lit, ink.a);
         #include <tonemapping_fragment>

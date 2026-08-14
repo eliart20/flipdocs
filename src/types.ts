@@ -21,6 +21,18 @@ export type FlipBookSource =
 
 export type FlipDirection = "next" | "previous";
 
+/** Page-relative grab coordinates used for a programmatically held turn. */
+export interface FlipBookTurnPose {
+  /** Horizontal grab point, where 0 is the spine and 1 is the loose edge. */
+  grabX: number;
+  /** Vertical grab point, where 0 is the bottom and 1 is the top. */
+  grabY: number;
+  /** Current vertical target for the grabbed paper, from bottom (0) to top (1). */
+  targetY: number;
+  /** Keeps the loose edge attached to the target as it is during a live drag. */
+  pointerAttached?: boolean;
+}
+
 /**
  * Which way the book opens. "rtl" is a right-bound book (Hebrew, Arabic,
  * manga): the unread stack sits on the left and sheets turn left-to-right.
@@ -53,9 +65,19 @@ export interface FlipBookHandle {
   previous(): void;
   goToPage(pageIndex: number): void;
   /** Hold a sheet at any point from 0 (right) to 1 (left). */
-  setFlipProgress(progress: number, direction?: FlipDirection): void;
+  setFlipProgress(
+    progress: number,
+    direction?: FlipDirection,
+    pose?: Partial<FlipBookTurnPose>,
+  ): void;
+  /** Show the exact loose-corner pose normally entered by pointer hover. */
+  previewCorner(corner?: "top" | "bottom", direction?: FlipDirection): void;
+  /** Return a held or previewed sheet to its starting spread without advancing. */
+  resetFlip(): void;
   /** Complete whichever held/dragged sheet is active. */
   completeFlip(): void;
+  /** Render immediately and return an origin-clean PNG data URL of the WebGL viewer. */
+  capturePng(): string;
   zoomIn(): void;
   zoomOut(): void;
   setZoom(zoom: number): void;

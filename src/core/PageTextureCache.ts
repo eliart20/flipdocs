@@ -42,6 +42,11 @@ export class PageTextureCache {
     return cached.texture;
   }
 
+  /** The raster height a page's cached texture was rendered at, if any. */
+  heightOf(index: number): number | undefined {
+    return this.entries.get(index)?.targetHeight;
+  }
+
   async get(index: number, targetHeight: number): Promise<Texture> {
     if (this.disposed) {
       const error = new Error("The page texture cache has been disposed.");

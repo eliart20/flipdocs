@@ -142,6 +142,8 @@ export function App() {
   const [links, setLinks] = useState(false);
   const [thumbnails, setThumbnails] = useState(false);
   const [direction, setDirection] = useState<"auto" | "ltr" | "rtl">("auto");
+  const [reproCase, setReproCase] = useState("Stable spread");
+  const [pngStatus, setPngStatus] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(() =>
     typeof window === "undefined" || !window.matchMedia(
       "(max-width: 760px), (max-width: 900px) and (orientation: landscape)",
@@ -224,6 +226,46 @@ export function App() {
     setLabel(`${pdf.name} · ${formatBytes(pdf.size)}`);
   };
 
+  const previewCorner = (cornerName: "top" | "bottom") => {
+    book.current?.previewCorner(cornerName, "next");
+    setReproCase(`${cornerName === "top" ? "Top" : "Bottom"} corner hover`);
+    setPngStatus("");
+  };
+
+  const holdSpineStress = () => {
+    book.current?.setFlipProgress(0.52, "next", {
+      grabX: 0.75,
+      grabY: 0.08,
+      targetY: 0.92,
+      pointerAttached: true,
+    });
+    setReproCase("Diagonal spine drag");
+    setPngStatus("");
+  };
+
+  const resetRepro = () => {
+    book.current?.resetFlip();
+    setReproCase("Stable spread");
+    setPngStatus("");
+  };
+
+  const downloadPng = () => {
+    try {
+      const png = book.current?.capturePng();
+      if (!png?.startsWith("data:image/png;base64,") || png.length < 100) {
+        throw new Error("The WebGL canvas returned an empty capture.");
+      }
+      const slug = reproCase.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      const link = document.createElement("a");
+      link.href = png;
+      link.download = `flipdocs-${slug || "viewer"}.png`;
+      link.click();
+      setPngStatus(`PNG saved · ${Math.round(png.length / 1024)} KB`);
+    } catch (error) {
+      setPngStatus(error instanceof Error ? `PNG failed · ${error.message}` : "PNG capture failed");
+    }
+  };
+
   return (
     <main className="demo">
       <header className="demo__header">
@@ -270,10 +312,14 @@ export function App() {
         <div className="demo__copy">
           <p>A small React library for PDFs and image sequences. It renders only when something changes and keeps just the nearby pages on the GPU.</p>
           <div className="demo__buttons">
-            <button onClick={() => book.current?.setFlipProgress(0.52, "next")}>Hold mid-flip</button>
-            <button className="demo__button--quiet" onClick={() => book.current?.setFlipProgress(0.48, "previous")}>Hold previous</button>
-            <button className="demo__button--quiet" onClick={() => book.current?.completeFlip()}>Complete</button>
+            <button data-testid="repro-hover-top" onClick={() => previewCorner("top")}>Hover top</button>
+            <button className="demo__button--quiet" data-testid="repro-hover-bottom" onClick={() => previewCorner("bottom")}>Hover bottom</button>
+            <button className="demo__button--quiet" data-testid="repro-spine-drag" onClick={holdSpineStress}>Spine drag</button>
+            <button className="demo__button--quiet" data-testid="repro-reset" onClick={resetRepro}>Reset pose</button>
+            <button className="demo__button--quiet" data-testid="download-png" onClick={downloadPng}>Download PNG</button>
           </div>
+          <output className="demo__repro-state" data-testid="repro-state">Showing: {reproCase}</output>
+          {pngStatus && <output className="demo__png-state" data-testid="png-status">{pngStatus}</output>}
         </div>
       </section>
 

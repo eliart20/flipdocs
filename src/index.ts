@@ -13,6 +13,7 @@ export type {
   FlipBookRiffleSettings,
   FlipBookSoundSettings,
   FlipBookSource,
+  FlipBookTurnPose,
   FlipBookZoomSettings,
   FlipDirection,
   ImageInput,
