@@ -46,10 +46,11 @@
     "dev": "node scripts/copy-pdf-worker.mjs public && vite",
     "build": "npm run clean && vite build && tsc -p tsconfig.lib.json && node scripts/copy-pdf-worker.mjs",
     "audit": "node scripts/audit-package.mjs",
-    "clean": "powershell -NoProfile -Command \"if (Test-Path -LiteralPath 'dist') { Remove-Item -LiteralPath 'dist' -Recurse -Force }\"",
+    "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "preview": "vite preview",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run typecheck && npm run test && npm run build"
   },
   "peerDependencies": {
