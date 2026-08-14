@@ -1,0 +1,182 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap");
+
+:root { color-scheme: dark; font-family: "DM Sans", system-ui, sans-serif; background: #101114; }
+* { box-sizing: border-box; }
+html { min-width: 0; scroll-behavior: smooth; }
+body { min-width: 0; margin: 0; color: #efeee9; background: #101114; }
+button, input, select { font: inherit; }
+
+.demo { min-width: 0; min-height: 100vh; overflow: hidden; }
+.demo__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(1180px, calc(100% - 48px));
+  height: 76px;
+  margin: auto;
+  border-bottom: 1px solid rgb(255 255 255 / 9%);
+}
+.demo__brand { display: flex; gap: 10px; align-items: center; color: inherit; font-weight: 600; text-decoration: none; }
+.demo__mark { display: grid; width: 30px; height: 30px; color: #131416; background: #e9c46a; border-radius: 8px; place-items: center; }
+.demo__actions { display: flex; gap: 18px; align-items: center; }
+.demo__source-status { display: grid; gap: 2px; justify-items: end; }
+.demo__source { overflow: hidden; max-width: 240px; color: rgb(255 255 255 / 45%); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.demo__source-progress { color: #e9c46a; font: 500 10px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.demo__upload, .demo__sample, .demo__pdf-picker { min-height: 36px; padding: 9px 13px; color: #f4f1e7; font-size: 12px; font-weight: 600; cursor: pointer; background: #111216; border: 1px solid rgb(255 255 255 / 16%); border-radius: 9px; }
+.demo__pdf-picker { width: min(310px, 32vw); overflow: hidden; text-overflow: ellipsis; }
+.demo__pdf-picker:disabled { cursor: wait; opacity: .55; }
+.demo__upload:hover { background: rgb(255 255 255 / 6%); }
+.demo__sample:hover { background: rgb(255 255 255 / 6%); }
+.demo__upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+.demo__intro {
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr;
+  gap: 80px;
+  align-items: end;
+  width: min(1180px, calc(100% - 48px));
+  padding: 76px 0 52px;
+  margin: auto;
+}
+.demo__eyebrow { margin: 0 0 16px; color: #e9c46a; font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+.demo h1 { margin: 0; font: 400 clamp(54px, 7.6vw, 112px)/.83 "Instrument Serif", Georgia, serif; letter-spacing: -.04em; }
+.demo h1 em { color: #aeb2bc; font-weight: 400; }
+.demo__copy { padding-bottom: 6px; }
+.demo__copy p { max-width: 410px; margin: 0 0 24px; color: rgb(255 255 255 / 55%); font-size: 14px; line-height: 1.65; }
+.demo__buttons { display: flex; gap: 8px; }
+.demo__buttons button { padding: 10px 14px; color: #161719; font-size: 12px; font-weight: 600; cursor: pointer; background: #e9c46a; border: 0; border-radius: 9px; }
+.demo__buttons .demo__button--quiet { color: #ecece9; background: rgb(255 255 255 / 8%); }
+
+.demo__viewer { position: relative; width: min(1320px, calc(100% - 32px)); min-width: min(560px, calc(100% - 32px)); max-width: calc(100% - 32px); height: min(76vh, 820px); min-height: 480px; max-height: 92vh; margin: 0 auto; overflow: hidden; resize: both; border: 1px solid rgb(255 255 255 / 8%); border-radius: 20px; box-shadow: 0 40px 90px rgb(0 0 0 / 30%); }
+.demo__viewer .flipdocs { height: 100%; }
+.demo__hint { position: absolute; right: 18px; bottom: 14px; z-index: 4; margin: 0; color: rgb(255 255 255 / 34%); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; pointer-events: none; }
+.demo__hint--mobile { display: none; }
+.demo__resize-hint { position: absolute; bottom: 14px; left: 18px; z-index: 4; margin: 0; color: rgb(255 255 255 / 34%); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; pointer-events: none; }
+.demo__physics { position: absolute; top: 64px; right: 14px; z-index: 6; width: 238px; max-height: calc(100% - 78px); padding: 0 13px 13px; overflow-y: auto; color: #efeee9; background: rgb(17 18 21 / 88%); border: 1px solid rgb(255 255 255 / 11%); border-radius: 12px; box-shadow: 0 10px 30px rgb(0 0 0 / 28%); scrollbar-width: thin; backdrop-filter: blur(16px); }
+.demo__physics summary { padding: 12px 0; font-size: 11px; font-weight: 600; letter-spacing: .08em; cursor: pointer; text-transform: uppercase; }
+.demo__physics h3 { padding-top: 10px; margin: 3px 0 10px; color: #e9c46a; font-size: 9px; font-weight: 600; letter-spacing: .12em; border-top: 1px solid rgb(255 255 255 / 8%); text-transform: uppercase; }
+.demo__physics label { display: block; margin: 8px 0 11px; }
+.demo__physics label span { display: flex; justify-content: space-between; margin-bottom: 5px; color: rgb(255 255 255 / 57%); font-size: 10px; }
+.demo__physics output { color: #e9c46a; font: inherit; }
+.demo__physics input { width: 100%; height: 3px; accent-color: #e9c46a; cursor: pointer; }
+.demo__physics input:disabled { cursor: default; opacity: .28; }
+.demo__physics select { width: 100%; padding: 6px 7px; color: rgb(255 255 255 / 72%); font-size: 10px; background: rgb(255 255 255 / 7%); border: 1px solid rgb(255 255 255 / 10%); border-radius: 7px; }
+.demo__physics select:disabled { opacity: .28; }
+.demo__physics .demo__toggle { display: flex; align-items: center; justify-content: space-between; }
+.demo__physics .demo__toggle span { flex: 1; margin: 0; }
+.demo__physics .demo__toggle input { width: 16px; height: 16px; margin: 0; }
+.demo__physics button { width: 100%; padding: 7px; color: rgb(255 255 255 / 68%); font-size: 10px; cursor: pointer; background: rgb(255 255 255 / 6%); border: 0; border-radius: 7px; }
+.demo__metrics { display: grid; grid-template-columns: repeat(3, 1fr); width: min(1180px, calc(100% - 48px)); margin: 74px auto 110px; border-block: 1px solid rgb(255 255 255 / 9%); }
+.demo__metrics article { display: flex; gap: 16px; align-items: center; padding: 30px; border-right: 1px solid rgb(255 255 255 / 9%); }
+.demo__metrics article:last-child { border: 0; }
+.demo__metrics strong { color: #e9c46a; font: 400 54px/1 "Instrument Serif", Georgia, serif; }
+.demo__metrics span { color: rgb(255 255 255 / 44%); font-size: 11px; line-height: 1.45; text-transform: uppercase; letter-spacing: .08em; }
+
+@media (max-width: 760px) {
+  .demo { overflow: clip; }
+  .demo__header {
+    flex-wrap: wrap;
+    align-content: center;
+    width: calc(100% - 24px);
+    height: auto;
+    min-height: 108px;
+    padding: max(12px, env(safe-area-inset-top)) 0 12px;
+  }
+  .demo__brand { width: 100%; }
+  .demo__actions { flex-wrap: wrap; width: 100%; gap: 6px; justify-content: stretch; }
+  .demo__source-status { display: none; }
+  .demo__pdf-picker { flex: 1 0 100%; width: 100%; min-height: 42px; }
+  .demo__upload, .demo__sample {
+    flex: 1 1 0;
+    min-height: 42px;
+    padding: 8px 6px;
+    font-size: 10px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .demo__intro {
+    grid-template-columns: 1fr;
+    gap: 0;
+    width: calc(100% - 24px);
+    padding: 14px 0;
+  }
+  .demo__intro > div:first-child { display: none; }
+  .demo__copy { padding: 0; }
+  .demo__copy p { display: none; }
+  .demo__buttons { gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .demo__buttons::-webkit-scrollbar { display: none; }
+  .demo__buttons button { flex: 1 0 auto; min-height: 42px; padding: 9px 10px; font-size: 10px; }
+  .demo__viewer {
+    width: calc(100% - 12px);
+    min-width: 0;
+    max-width: none;
+    height: max(520px, 74svh);
+    min-height: 520px;
+    max-height: 820px;
+    margin-bottom: env(safe-area-inset-bottom);
+    resize: none;
+    border-radius: 12px;
+  }
+  .demo__physics {
+    top: 62px;
+    right: 7px;
+    width: calc(100% - 14px);
+    max-height: calc(100% - 70px);
+    padding-inline: 15px;
+    border-radius: 11px;
+  }
+  .demo__physics:not([open]) { width: 152px; padding-bottom: 0; }
+  .demo__physics summary { min-height: 46px; padding: 15px 0; touch-action: manipulation; }
+  .demo__physics label { margin-block: 11px 14px; }
+  .demo__physics input[type="range"] { height: 28px; margin: -10px 0; touch-action: pan-x; }
+  .demo__physics .demo__toggle input { width: 22px; height: 22px; }
+  .demo__physics select, .demo__physics button { min-height: 42px; }
+  .demo__hint--desktop { display: none; }
+  .demo__hint--mobile {
+    right: 8px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    left: 8px;
+    display: block;
+    font-size: 8px;
+    text-align: center;
+  }
+  .demo__resize-hint { display: none; }
+  .demo__metrics { grid-template-columns: 1fr; }
+  .demo__metrics article { border-right: 0; border-bottom: 1px solid rgb(255 255 255 / 9%); }
+}
+
+@media (max-width: 380px) {
+  .demo__upload, .demo__sample, .demo__pdf-picker { font-size: 9px; }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  .demo__header {
+    width: calc(100% - 24px);
+    height: 58px;
+    padding-top: env(safe-area-inset-top);
+  }
+  .demo__source-status { display: none; }
+  .demo__actions { flex-wrap: nowrap; gap: 6px; }
+  .demo__pdf-picker { width: min(280px, 46vw); min-height: 38px; padding: 7px 9px; font-size: 10px; }
+  .demo__upload, .demo__sample { min-height: 38px; padding: 7px 9px; font-size: 10px; }
+  .demo__intro { display: none; }
+  .demo__viewer {
+    width: calc(100% - 12px);
+    min-width: 0;
+    max-width: none;
+    height: calc(100svh - 64px - env(safe-area-inset-bottom));
+    min-height: 300px;
+    max-height: none;
+    resize: none;
+    border-radius: 12px;
+  }
+  .demo__physics {
+    top: 62px;
+    right: 7px;
+    width: min(348px, calc(100% - 14px));
+    max-height: calc(100% - 70px);
+  }
+  .demo__physics:not([open]) { width: 152px; }
+  .demo__hint--desktop, .demo__resize-hint { display: none; }
+  .demo__hint--mobile { right: 8px; bottom: 8px; left: 8px; display: block; font-size: 8px; text-align: center; }
+}

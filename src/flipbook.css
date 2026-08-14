@@ -1,0 +1,193 @@
+.flipdocs {
+  --flipdocs-background: #202226;
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 360px;
+  overflow: hidden;
+  isolation: isolate;
+  color: #f5f6f7;
+  background:
+    radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--flipdocs-background), white 7%), var(--flipdocs-background) 66%),
+    var(--flipdocs-background);
+}
+
+.flipdocs__stage {
+  position: absolute;
+  inset: 0;
+  filter: drop-shadow(0 3px 2px rgb(0 0 0 / 24%)) drop-shadow(0 20px 28px rgb(0 0 0 / 32%));
+}
+
+.flipdocs__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+  touch-action: none;
+  overscroll-behavior: contain;
+  cursor: grab;
+}
+
+.flipdocs__canvas:active { cursor: grabbing; }
+.flipdocs__canvas--corner { cursor: grab; }
+.flipdocs__canvas:focus-visible { box-shadow: inset 0 0 0 2px #8cc8ff; }
+
+.flipdocs__controls {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  z-index: 4;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  min-height: 42px;
+  padding: 5px;
+  color: #f7f8fa;
+  background: rgb(17 18 21 / 82%);
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 28%);
+  transform: translateX(-50%);
+  backdrop-filter: blur(14px);
+}
+
+.flipdocs__controls button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: inherit;
+  font: 400 26px/1 system-ui, sans-serif;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  place-items: center;
+}
+
+.flipdocs__controls button:hover:not(:disabled) { background: rgb(255 255 255 / 10%); }
+.flipdocs__controls button:disabled { cursor: default; opacity: 0.28; }
+.flipdocs__controls button:focus-visible { outline: 2px solid #8cc8ff; outline-offset: 1px; }
+
+.flipdocs__control-divider {
+  width: 1px;
+  height: 22px;
+  margin-inline: 3px;
+  background: rgb(255 255 255 / 12%);
+}
+
+.flipdocs__controls .flipdocs__zoom-value {
+  width: 50px;
+  color: rgb(255 255 255 / 68%);
+  font: 600 10px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.flipdocs__page-count {
+  min-width: 82px;
+  padding-inline: 7px;
+  color: rgb(255 255 255 / 78%);
+  font: 600 12px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-align: center;
+}
+
+.flipdocs__fullscreen-glyph { font-size: 18px; }
+
+.flipdocs__thumbnails {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  left: 12px;
+  z-index: 4;
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  padding: 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  background: rgb(17 18 21 / 72%);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 10px;
+  backdrop-filter: blur(12px);
+}
+
+.flipdocs__thumbnail {
+  display: grid;
+  flex: none;
+  width: 46px;
+  height: 62px;
+  padding: 0;
+  overflow: hidden;
+  color: rgb(255 255 255 / 55%);
+  font: 600 11px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  cursor: pointer;
+  background: rgb(255 255 255 / 7%);
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 4px;
+  place-items: center;
+}
+
+.flipdocs__thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.flipdocs__thumbnail--active {
+  border-color: #8cc8ff;
+  box-shadow: 0 0 0 1px #8cc8ff;
+}
+
+.flipdocs__thumbnail:focus-visible { outline: 2px solid #8cc8ff; outline-offset: 1px; }
+
+.flipdocs__message {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  color: rgb(255 255 255 / 70%);
+  font: 500 13px/1.4 system-ui, sans-serif;
+  pointer-events: none;
+  background: rgb(20 21 24 / 22%);
+}
+
+.flipdocs__message--error { color: #ffd0ca; }
+
+.flipdocs__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgb(255 255 255 / 18%);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: flipdocs-spin 0.7s linear infinite;
+}
+
+@keyframes flipdocs-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .flipdocs__spinner { animation-duration: 1.5s; }
+}
+
+@media (max-width: 760px) {
+  .flipdocs__controls {
+    top: 8px;
+    gap: 1px;
+    min-height: 44px;
+    padding: 3px;
+    border-radius: 10px;
+  }
+
+  .flipdocs__controls button {
+    width: 38px;
+    height: 38px;
+    font-size: 24px;
+    touch-action: manipulation;
+  }
+
+  .flipdocs__page-count { min-width: 58px; padding-inline: 3px; font-size: 10px; }
+  .flipdocs__controls .flipdocs__zoom-value { width: 44px; font-size: 9px; }
+  .flipdocs__control-divider { height: 20px; margin-inline: 1px; }
+}

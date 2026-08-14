@@ -1,0 +1,9 @@
+node_modules/
+dist/
+public/pdf.worker.min.mjs
+public/pdfs/
+.vite/
+*.tgz
+*.tsbuildinfo
+.ripgrep/
+.codex-remote-attachments/
